@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Video Player</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{display:flex;justify-content:center;align-items:center;min-height:100vh;background:#222}
+        .video-container{width:800px;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.5);resize:both;min-width:300px;min-height:200px;max-width:90vw;max-height:90vh}
+        .video{width:100%;height:100%;display:block;object-fit:fill}
+        .controls-container{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:10px;transform:translateY(90%);transition:transform 0.3s}
+        .video-container:hover .controls-container{transform:translateY(0)}
+        .controls{display:flex;align-items:center;gap:10px;padding:5px}
+        .button{background:none;border:none;color:white;cursor:pointer;font-size:20px}
+        .progress-container{flex-grow:1;height:5px;background:rgba(255,255,255,0.2);border-radius:3px;cursor:pointer}
+        .progress{height:100%;background:#f00;border-radius:3px;width:0%;transition:width 0.1s linear}
+        .time{color:white;font-family:Arial,sans-serif;font-size:14px;white-space:nowrap}
+        .volume-container{display:flex;align-items:center;gap:5px}
+        .volume-slider{width:80px;height:5px;-webkit-appearance:none;background:rgba(255,255,255,0.2);border-radius:3px}
+        .volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:#f00;border-radius:50%;cursor:pointer}
+        .resize-handle{position:absolute;bottom:0;right:0;width:15px;height:15px;background:#f00;cursor:nwse-resize;z-index:10}
+        .video-container.fullscreen{position:fixed;top:0;left:0;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;z-index:1000;resize:none}
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <video class="video" src="cartoon.mp4"></video>
+        <div class="controls-container">
+            <div class="controls">
+                <button class="button play-pause">▶</button>
+                <div class="progress-container"><div class="progress"></div></div>
+                <span class="time current-time">0:00</span>
+                <div class="volume-container">
+                    <button class="button volume-btn">🔊</button>
+                    <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1">
+                </div>
+                <button class="button fullscreen-btn">⛶</button>
+                <span class="time duration">0:00</span>
+            </div>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+
+    <script>
+        const v=document.querySelector('.video'),pb=document.querySelector('.play-pause'),
+              pg=document.querySelector('.progress'),pgc=document.querySelector('.progress-container'),
+              vs=document.querySelector('.volume-slider'),ct=document.querySelector('.current-time'),
+              d=document.querySelector('.duration'),fs=document.querySelector('.fullscreen-btn'),
+              vc=document.querySelector('.video-container'),rh=document.querySelector('.resize-handle');
+
+        // Toggle play/pause
+        const tp=()=>{v.paused?(v.play(),pb.textContent='⏸'):(v.pause(),pb.textContent='▶')};
+        pb.addEventListener('click',tp);v.addEventListener('click',tp);
+
+        // Update progress
+        v.addEventListener('timeupdate',()=>{
+            pg.style.width=`${(v.currentTime/v.duration)*100}%`;
+            ct.textContent=ft(v.currentTime);
+        });
+
+        // Seek
+        pgc.addEventListener('click',e=>{
+            const r=pgc.getBoundingClientRect();
+            v.currentTime=((e.clientX-r.left)/r.width)*v.duration;
+        });
+
+        // Volume
+        vs.addEventListener('input',()=>v.volume=vs.value);
+
+        // Duration
+        v.addEventListener('loadedmetadata',()=>d.textContent=ft(v.duration));
+
+        // Time format
+        const ft=s=>`${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+
+        // Keyboard
+        document.addEventListener('keydown',e=>{
+            if(e.code==='Space'){e.preventDefault();tp()}
+            if(e.code==='ArrowRight')v.currentTime+=5;
+            if(e.code==='ArrowLeft')v.currentTime-=5;
+            if(e.code==='KeyF')tfs();
+        });
+
+        // Fullscreen
+        fs.addEventListener('click',tfs);
+        const tfs=()=>vc.classList.toggle('fullscreen');
+
+        // Resize
+        rh.addEventListener('mousedown',e=>{
+            e.preventDefault();
+            const m=ev=>{
+                const r=vc.getBoundingClientRect();
+                vc.style.width=`${ev.clientX-r.left}px`;
+                vc.style.height=`${ev.clientY-r.top}px`;
+            };
+            const s=()=>window.removeEventListener('mousemove',m);
+            window.addEventListener('mousemove',m);
+            window.addEventListener('mouseup',s,{once:true});
+        });
+    </script>
+</body>
+</html>
